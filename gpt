@@ -1,0 +1,156 @@
+Hi, balance my stats so it would be balanced and game wouldn't be unfair:
+
+spell stats:
+spells = [
+    Spell("Firebolt", 5, 8, 2),
+    Spell("Ice Shard", 7, 15, 3),
+    Spell("Lightning Strike", 12, 30, 8),
+    Spell("Earthquake", 18, 50, 12),
+    Spell("Meteor Shower", 25, 80, 18),
+    Spell("Wind Slash", 6, 12, 4),
+    Spell("Water Jet", 9, 20, 6),
+    Spell("Firestorm", 14, 40, 10),
+    Spell("Arcane Blast", 20, 60, 14),
+
+    # Healing Spells
+    Spell("Healing Light", healing=8, mana=15, wis=2),
+    Spell("Greater Heal", healing=15, mana=35, wis=5),
+    Spell("Divine Restoration", healing=25, mana=70, wis=8),
+
+    # Defensive Spells
+    Spell("Magic Shield", defense_boost=6, mana=25, wis=4)
+]
+spell class:
+class Spell:
+    def __init__(self, name, damage=0, mana=0, wis=0, healing=0, defense_boost=0):
+
+player stats:
+class Player:
+
+    def __init__(self, name, race, p_class):
+        self.name = name
+        self.race = race
+        self.p_class = p_class
+
+        self.stren = 0
+        self.dex = 0
+        self.con = 0
+        self.intel = 0
+        self.wis = 0
+        self.cha = 0
+        self.maxhp = 10
+        self.hp = self.maxhp
+        self.lvl = 1
+        self.xp = 0
+        self.defence = 10
+        self.basic_defence = 10
+        self.attack = 0
+        self.money = 50
+        self.damage = 4
+        self.maxmana = 0
+        self.mana = 0
+
+    def choose_race(self, race='human'):
+        if race not in races:
+            print("Invalid race chosen!")
+            return
+
+        self.race = race
+
+        if race == 'human':
+            self.stren += 1
+            self.dex += 1
+            self.con += 1
+            self.intel += 1
+            self.wis += 1
+            self.cha += 1
+            self.hp += 2
+            self.maxhp += 2
+        elif race == 'elf':
+            self.stren += 0
+            self.dex += 3
+            self.con += 1
+            self.intel += 2
+            self.wis += 2
+            self.cha += 1
+            self.hp += 1
+            self.maxhp += 1
+            self.defence += 1
+            self.basic_defence += 1
+        elif race == 'dwarf':
+            self.stren += 2
+            self.dex += 1
+            self.con += 3
+            self.intel += 1
+            self.wis += 2
+            self.cha -= 1
+            self.hp += 3
+            self.maxhp += 3
+            self.defence += 1
+            self.basic_defence += 1
+
+    def choose_class(self, p_class='barbarian'):
+        if p_class not in classes:
+            print("Invalid class chosen!")
+            return
+
+        self.p_class = p_class
+
+        if p_class == 'barbarian':
+            self.stren += 3
+            self.con += 1
+            self.hp += 4
+            self.maxhp += 4
+            self.attack += 2
+        elif p_class == 'wizard':
+            self.intel += 3
+            self.wis += 2
+            self.hp -=1
+            self.maxhp -= 1
+            self.defence -= 1
+            self.basic_defence -= 1
+            self.maxmana = 50
+            self.mana = 50
+            self.spells = []
+
+        elif p_class == 'rogue':
+            self.dex += 3
+            self.intel += 2
+            self.cha += 1
+            self.attack += 2
+
+enemies dict:
+enemies = {
+    2: [
+        Enemy("Goblin", 7, 4, 12, 50, 5, True),
+        Enemy("Kobold", 5, 3, 10, 25, 4, True),
+        Enemy("Giant Rat", 6, 2, 11, 30, 3, False),
+        Enemy("Skeleton", 8, 3, 13, 40, 4, False),
+        Enemy("Zombie", 9, 4, 12, 45, 5, False)
+    ],
+    4: [
+        Enemy("Orc", 15, 6, 13, 100, 8, True),
+        Enemy("Hobgoblin", 11, 5, 15, 75, 6, True),
+        Enemy("Gnoll", 12, 5, 14, 80, 7, False),
+        Enemy("Giant Spider", 10, 4, 12, 70, 6, False),
+        Enemy("Bandit", 13, 5, 13, 85, 7, True)
+    ],
+    6: [
+        Enemy("Ogre", 59, 8, 11, 450, 13, True),
+        Enemy("Bugbear", 27, 6, 16, 200, 11, True),
+        Enemy("Worg", 30, 7, 14, 220, 10, False),
+        Enemy("Harpy", 25, 6, 13, 180, 9, False),
+        Enemy("Giant Lizard", 35, 7, 15, 250, 12, False)
+    ],
+    8: [
+        Enemy("Ettin", 85, 10, 14, 1100, 18, False),
+        Enemy("Owlbear", 59, 9, 13, 700, 15, False),
+        Enemy("Troll", 84, 8, 15, 1800, 16, True),
+        Enemy("Giant Crocodile", 85, 9, 14, 1200, 17, False),
+        Enemy("Chimera", 114, 11, 16, 3900, 19, False)
+    ]
+}
+
+enemy class:
+class Enemy:
+    def __init__(self, name, hp, attack, defence, xp, damage, deal):
