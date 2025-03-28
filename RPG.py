@@ -175,20 +175,8 @@ class Player:
             print(f'MANA = {self.mana}/{self.maxmana}')
         print(f'DEFENCE = {self.defence}')
         print(f'ATTACK = {self.attack}\n')
-        print(f'GOLD = {self.gold}')
         print(f'LVL = {self.lvl}')
         print(f'XP = {self.xp}\n')
-    '''self.equipment = {
-            'weapon': None,
-            'body_armor': None,
-            'head': None,
-            'gloves': None,
-            'boots': None,
-            'ring_l': None,
-            'ring_r': None,
-            'artefact_1': None,
-            'artefact_2': None
-        }'''
     def item_name(self, slot):
         if self.equipment[slot] == None:
             return 'Empty'
@@ -343,21 +331,42 @@ class Trader:
         self.food = food
     def trade(self, player):
         print("You've encountered a wardening trader")
+        food = roll(4)+4
+        item_names = []
+        for item in items:
+            item_names.append(item.name.lower())
         while True:
+            print(item_names)
+            print(f'You have {player.gold} gold')
             action = input('Would you like to buy anything? (y/n): ').lower()
             if action == 'y':
                 for item in items:
                     print(f'{item.name} - {item.cost}')
-                print(f'Your gold: {player.gold}')
+                print(f'Food - 25 (x{food})')
                 choise = input('Choose an item to buy: ')
-                for item in items:
-                    if item.name.lower == choise.lower:
-                        if item.cost <= player.gold:
-                            player.inventory.append(item)
-                            player.gold -= item.cost
-                        else:
-                            print('No enough gold!')
-                    break
+                if choise.lower() == 'food':
+                    amount = int(input(f'Choose the amount(1-{food}): '))
+                    if 0 < amount <= food and player.gold >= 25*amount:
+                        food -= amount
+                        player.food += amount
+                        player.gold -= 25*amount
+                        print(f"You've bought {amount} food and now you have {player.food} food and {player.gold} gold.")
+                    else:
+                        print('Insufficient amount of food!')
+                elif choise in item_names:
+                    for item in items:
+                        if item.name.lower() == choise.lower():
+                            print('loop')
+                            if item.cost <= player.gold:
+                                player.inventory.append(item)
+                                player.gold -= item.cost
+                                print(f"You've bought {item.name} and now you have {player.gold} gold.")
+                            else:
+                                print('loop2')
+                                print('No enough gold!')
+                        break
+                else:
+                    print('No such item, try again.')
             elif action == 'n':
                 print('Okay, bye!')
                 break
@@ -592,18 +601,25 @@ for spell in spells:
 
 
 turn = 0
-
+trader = 6 + roll(4)
+trader_check = 0
 while True:
     turn += 1
+    trader_check += 1
     print("\nWhat do you want to do?")
     print('\t1 - go deeper\n\t2 - make a rest\n\t3 - see your stats\n\t4 - inventory')
     action = input('Your choice: ')
     if action == '1':
-        enemy_template = enemies[enemy_lvl(player.lvl)][roll(5) - 1]
-        enemy = Enemy(enemy_template.name, enemy_template.hp, enemy_template.attack,
-                      enemy_template.defence, enemy_template.xp, enemy_template.damage, enemy_template.deal)
-        fight(player, enemy)
-        print(f'Now you have {player.hp} HP')
+        if trader - trader_check <= 0:
+            Trader.trade(trader, player)
+            trader = 6 + roll(4)
+            trader_check = 0
+        else:
+            enemy_template = enemies[enemy_lvl(player.lvl)][roll(5) - 1]
+            enemy = Enemy(enemy_template.name, enemy_template.hp, enemy_template.attack,
+                          enemy_template.defence, enemy_template.xp, enemy_template.damage, enemy_template.deal)
+            fight(player, enemy)
+            print(f'Now you have {player.hp} HP')
     elif action == '2':
         if player.food > 0:
             player.hp = player.maxhp
@@ -622,6 +638,7 @@ while True:
         print('\nInventory:')
         for item in player.inventory:
             print(f'{item.name}')
+        print('\nGOLD = {self.gold}')
         print('\nFood x', player.food)
         print('\nPotions:')
         for potion in player.potions:
@@ -635,10 +652,9 @@ while True:
         else:
             print('No such option.')
             continue
+
     elif action == '5':
         Trader.trade(trader, player)
-        
-        
         
     else:
         print('\tNo such option, choose something else.')
