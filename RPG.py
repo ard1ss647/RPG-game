@@ -3,6 +3,7 @@ from random import randint
 races = ['human', 'elf', 'dwarf']
 classes = ['barbarian', 'wizard', 'rogue']
 lvls = {i: round(300 * (i - 1) ** 1.5) for i in range(1, 21)}  # More balanced XP curve
+marker = 0
 
 def roll(dice):
     return randint(1,dice)
@@ -46,6 +47,7 @@ class Player:
             'artefact_2': None
         }
         self.inventory = []
+        self.scrolls = []
 
         self.food = 5
 
@@ -118,9 +120,6 @@ class Player:
             self.basic_attack += 2
             self.defence += 1
             self.basic_defence += 1
-    def spells(self, spell):
-        if self.wis >= spell.wis:
-            self.spells.append(spell)
     def count_xp(self):
         print(f'{self.name} is {self.lvl} lvl, has {self.xp} xp and need {lvls[self.lvl + 1] - self.xp} more to get to {self.lvl +1 } lvl')
     def lvl_up(self):
@@ -373,6 +372,22 @@ class Trader:
             else:
                 print('No such option, try again')
 
+class Scroll:
+    def __init__(self, lvl, spell, cost):
+        self.lvl = lvl
+        self.spell = spell
+        self.cost = cost
+    def get(self, player):
+        player.scrolls.append(self)
+    def use(self, player):
+        if player.lvl >= self.lvl:
+            if player.wis >= self.spell.wis:
+                player.spells.append(self.spell)
+                player.scrolls.remove(self)
+            else:
+                print('Your wisdom is not high enough.')
+        else:
+            print('Your level is not high enough.')
 
 
 def cast(player, enemy):
@@ -440,6 +455,7 @@ def fight(player, enemy):
                 if potion in player.potions:
                     if potion.name.lower() == chosen_potion.lower():
                         Potion.drink(potion, player)
+                        player.potions.remove(potion)
                         break
                 else:
                     print('No such potion found.')
@@ -454,16 +470,7 @@ def fight(player, enemy):
     player.defence = player.basic_defence
 
 
-
-
 # Character creation
-
-
-
-player_name = 'Alex'
-player_race = 'elf'
-player_clas = 'wizard'
-
 #Enemy -> name, hp, attack, defence, xp, damage
 def enemy_lvl(lvl):
     if lvl % 2 != 0:
@@ -551,6 +558,7 @@ spells = [
     Spell("Lightning Strike", 14, 28, 7),
     Spell("Earthquake", 20, 45, 10),
     Spell("Meteor Shower", 30, 70, 15),
+
     Spell("Wind Slash", 7, 10, 4),
     Spell("Water Jet", 10, 18, 5),
     Spell("Firestorm", 16, 35, 10),
@@ -565,6 +573,24 @@ spells = [
     Spell("Magic Shield", defense_boost=6, mana=20, wis=4)
 ]
 
+scrolls = [
+    Scroll(1, Spell('Firebolt'), 6),
+    Scroll(3, Spell('Ice Shard'), 12),
+    Scroll(7, Spell('Lightning Strike'), 28),
+    Scroll(10, Spell('Earthquake'), 45),
+    Scroll(15, Spell('Meteor Shower'), 70),
+
+    Scroll(4, Spell('Wind Slash'), 10),
+    Scroll(5, Spell('Water Jet'), 18),
+    Scroll(10, Spell('Firestorm'), 35),
+    Scroll(12, Spell('Arcane Blast'), 55),
+
+    Scroll(2, Spell('Healing Light'), 15),
+    Scroll(5, Spell('Greater Heal'), 35),
+    Scroll(8, Spell('Divine Restoration'), 70),
+
+    Scroll(4, Spell('Magic Shield'), 20)
+]
 
 items = [
                                          #stats = [hp, mana, attack, defence]
@@ -582,6 +608,9 @@ potions = [
     Potion('Minor attack potion', 0, 0, 0, 3, 30)
 ]
 
+player_name = 'Alex'
+player_race = 'elf'
+player_clas = 'barbarian'
 
 '''Main game'''
 
@@ -596,9 +625,7 @@ Player.stats(player)
 for i in range(4):
     player.potions.append(potions[i])
 
-for spell in spells:
-    Player.spells(player, spell)
-
+Scroll.get(scrolls[0], player)
 
 turn = 0
 trader = 6 + roll(4)
@@ -608,6 +635,8 @@ while True:
     trader_check += 1
     print("\nWhat do you want to do?")
     print('\t1 - go deeper\n\t2 - make a rest\n\t3 - see your stats\n\t4 - inventory')
+    if player_clas == 'wizard':
+        print('\t5 - see your spells')
     action = input('Your choice: ')
     if action == '1':
         if trader - trader_check <= 0:
@@ -640,21 +669,45 @@ while True:
             print(f'{item.name}')
         print('\nGOLD = {self.gold}')
         print('\nFood x', player.food)
-        print('\nPotions:')
-        for potion in player.potions:
-                print(f'{potion.name} - Mana = {potion.mana}, HP = {potion.hp}, Defence = {potion.defence}, Attack = {potion.attack}')
+        if player.potions != []:
+            print('\nPotions:')
+            for potion in player.potions:
+                    print(f'{potion.name} - Mana = {potion.mana}, HP = {potion.hp}, Defence = {potion.defence}, Attack = {potion.attack}')
+        if player.scrolls != []:
+            print('\nScrolls:')
+            for scroll in player.scrolls:
+                print(f'Scroll of {scroll.spell.name}')
         print('\n1 - go back\n2 - equip item')
+        if player.scrolls != []:
+            print('3 - use a scroll')
         action_chosen = input('Choose your action: ')
         if action_chosen == "1":
             continue
         elif action_chosen == "2":
             Player.equip(player)
+        elif action_chosen == "3":
+            while True:
+                for scroll in player.scrolls:
+                    print(f'Scroll of {scroll.spell.name}')
+                chosen_scroll = input("Choose your scroll: ")
+                for scroll in scrolls:
+                    if chosen_scroll.lower() == scroll.spell.name.lower():
+                        Scroll.use(scroll, player)
+                        print(f"You've used the scroll of {scroll.spell.name}")
+                        marker = 1
+                        break
+                if marker == 0:
+                    print('No such scroll! Try again.')
+                elif marker == 1:
+                    marker = 0
         else:
             print('No such option.')
             continue
 
     elif action == '5':
-        Trader.trade(trader, player)
-        
+        for spell in player.spells:
+            print(f"{spell.name} - DMG = {spell.damage}, Healing = {spell.healing}, Defense Boost = {spell.defense_boost}, Mana = {spell.mana}")
+        if player.spells == []:
+            print("You don't have any spells")
     else:
         print('\tNo such option, choose something else.')
