@@ -210,7 +210,7 @@ class Player:
     #add item removal => stats back to 0
 
 class Enemy:
-    def __init__(self, name, hp, attack, defence, xp, damage, deal):
+    def __init__(self, name, hp, attack, defence, xp, damage, deal, gold):
         self.name = name
         self.hp = hp
         self.attack = attack
@@ -218,6 +218,7 @@ class Enemy:
         self.xp = xp
         self.damage = damage
         self.deal = deal
+        self.gold = gold
 
     def damage_enemy(self, p_attack, p_damage):
         p_hit = p_attack + roll(20)
@@ -335,10 +336,9 @@ class Trader:
         for item in items:
             item_names.append(item.name.lower())
         while True:
-            print(item_names)
-            print(f'You have {player.gold} gold')
-            action = input('Would you like to buy anything? (y/n): ').lower()
-            if action == 'y':
+            print(f'You have {player.gold} gold\nWould you like to buy or sell anything?\n\t1 - buy\n\t2 - sell\n\t3 - leave')
+            action = input('Your choice: ')
+            if action == '1':
                 for item in items:
                     print(f'{item.name} - {item.cost}')
                 print(f'Food - 25 (x{food})')
@@ -355,18 +355,42 @@ class Trader:
                 elif choise in item_names:
                     for item in items:
                         if item.name.lower() == choise.lower():
-                            print('loop')
                             if item.cost <= player.gold:
                                 player.inventory.append(item)
                                 player.gold -= item.cost
                                 print(f"You've bought {item.name} and now you have {player.gold} gold.")
                             else:
-                                print('loop2')
                                 print('No enough gold!')
-                        break
+                            break
                 else:
                     print('No such item, try again.')
-            elif action == 'n':
+            elif action == '2':
+                print('\nInventory:')
+                for item in player.inventory:
+                    print(f'{item.name}')
+                print(f'\nGOLD = {player.gold}')
+                print('\nWhat would you like to sell?')
+                sell = input('Item: ')
+                inventory_item_names = []
+                for item in player.inventory:
+                    inventory_item_names.append(item.name.lower())
+                if sell.lower() in inventory_item_names:
+                    for item in player.inventory:
+                        if item.name.lower() == sell.lower():
+                            sure = input(f"Are you sure you want to sell {item.name} for {int(item.cost // 1.42)} gold? (y/n): ")
+                            if sure.lower() == 'y':
+                                player.inventory.remove(item)
+                                player.gold += int(item.cost // 1.42)
+                                break
+                            elif sure.lower() == 'n':
+                                print('You have not sold your item.')
+                                break
+                            else:
+                                print('You have to choose between yes and no (y/n).')
+                                break
+                else:
+                    print("You do not possess such item")
+            elif action == '3':
                 print('Okay, bye!')
                 break
             else:
@@ -442,8 +466,10 @@ def fight(player, enemy):
             else:
                 enemy.damage_enemy(player.attack, player.damage)
                 if enemy.hp <= 0:
-                    print(f"Congratulations! You won and gained {enemy.xp} XP!")
+                    got_gold = enemy.gold + roll(3)
+                    print(f"Congratulations! You won and gained {enemy.xp} XP and {got_gold} gold!")
                     player.get_xp(enemy.xp)
+                    player.gold += got_gold
                     return
             enemy.damage_player(player)
         elif choice == "4":
@@ -481,74 +507,74 @@ def enemy_lvl(lvl):
 
 enemies = {
     2: [
-        Enemy("Goblin", 7, 4, 12, 50, 5, True),
-        Enemy("Kobold", 5, 3, 10, 25, 4, True),
-        Enemy("Giant Rat", 6, 2, 11, 30, 3, False),
-        Enemy("Skeleton", 8, 3, 13, 40, 4, False),
-        Enemy("Zombie", 9, 4, 12, 45, 5, False)
+        Enemy("Goblin", 7, 4, 12, 50, 5, True, 10),
+        Enemy("Kobold", 5, 3, 10, 25, 4, True, 8),
+        Enemy("Giant Rat", 6, 2, 11, 30, 3, False, 6),
+        Enemy("Skeleton", 8, 3, 13, 40, 4, False, 9),
+        Enemy("Zombie", 9, 4, 12, 45, 5, False, 10)
     ],
     4: [
-        Enemy("Orc", 15, 6, 13, 100, 8, True),
-        Enemy("Hobgoblin", 11, 5, 15, 75, 6, True),
-        Enemy("Gnoll", 12, 5, 14, 80, 7, False),
-        Enemy("Giant Spider", 10, 4, 12, 70, 6, False),
-        Enemy("Bandit", 13, 5, 13, 85, 7, True)
+        Enemy("Orc", 15, 6, 13, 100, 8, True, 20),
+        Enemy("Hobgoblin", 11, 5, 15, 75, 6, True, 18),
+        Enemy("Gnoll", 12, 5, 14, 80, 7, False, 19),
+        Enemy("Giant Spider", 10, 4, 12, 70, 6, False, 17),
+        Enemy("Bandit", 13, 5, 13, 85, 7, True, 18)
     ],
     6: [
-        Enemy("Ogre", 300, 8, 11, 300, 13, True),
-        Enemy("Bugbear", 180, 6, 16, 200, 11, True),
-        Enemy("Worg", 30, 7, 14, 220, 10, False),
-        Enemy("Harpy", 25, 6, 13, 180, 9, False),
-        Enemy("Giant Lizard", 35, 7, 15, 250, 12, False)
+        Enemy("Ogre", 300, 8, 11, 300, 13, True, 60),
+        Enemy("Bugbear", 180, 6, 16, 200, 11, True, 50),
+        Enemy("Worg", 30, 7, 14, 220, 10, False, 25),
+        Enemy("Harpy", 25, 6, 13, 180, 9, False, 22),
+        Enemy("Giant Lizard", 35, 7, 15, 250, 12, False, 28)
     ],
     8: [
-        Enemy("Ettin", 85, 10, 14, 1100, 18, False),
-        Enemy("Owlbear", 59, 9, 13, 700, 15, False),
-        Enemy("Troll", 84, 8, 15, 1200, 16, True),
-        Enemy("Giant Crocodile", 85, 9, 14, 1000, 17, False),
-        Enemy("Chimera", 114, 11, 16, 2500, 19, False)
+        Enemy("Ettin", 85, 10, 14, 1100, 18, False, 70),
+        Enemy("Owlbear", 59, 9, 13, 700, 15, False, 55),
+        Enemy("Troll", 84, 8, 15, 1200, 16, True, 75),
+        Enemy("Giant Crocodile", 85, 9, 14, 1000, 17, False, 70),
+        Enemy("Chimera", 114, 11, 16, 2500, 19, False, 85)
     ],
     10: [
-        Enemy("Hill Giant", 105, 11, 15, 1800, 21, True),
-        Enemy("Frost Giant", 138, 12, 16, 3900, 25, True),
-        Enemy("Fire Giant", 162, 13, 18, 5000, 28, False),
-        Enemy("Cloud Giant", 200, 14, 19, 7200, 30, True),
-        Enemy("Stone Giant", 126, 12, 17, 4500, 26, True)
+        Enemy("Hill Giant", 105, 11, 15, 1800, 21, True, 90),
+        Enemy("Frost Giant", 138, 12, 16, 3900, 25, True, 110),
+        Enemy("Fire Giant", 162, 13, 18, 5000, 28, False, 125),
+        Enemy("Cloud Giant", 200, 14, 19, 7200, 30, True, 140),
+        Enemy("Stone Giant", 126, 12, 17, 4500, 26, True, 115)
     ],
     12: [
-        Enemy("Young Red Dragon", 178, 14, 18, 11000, 40, False),
-        Enemy("Young Blue Dragon", 152, 13, 17, 8400, 36, False),
-        Enemy("Young Green Dragon", 136, 12, 16, 7200, 32, True),
-        Enemy("Young Black Dragon", 127, 11, 15, 5900, 30, False),
-        Enemy("Young White Dragon", 133, 10, 14, 5500, 28, False)
+        Enemy("Young Red Dragon", 178, 14, 18, 11000, 40, False, 200),
+        Enemy("Young Blue Dragon", 152, 13, 17, 8400, 36, False, 180),
+        Enemy("Young Green Dragon", 136, 12, 16, 7200, 32, True, 160),
+        Enemy("Young Black Dragon", 127, 11, 15, 5900, 30, False, 150),
+        Enemy("Young White Dragon", 133, 10, 14, 5500, 28, False, 140)
     ],
     14: [
-        Enemy("Adult Red Dragon", 256, 19, 22, 50000, 60, False),
-        Enemy("Adult Blue Dragon", 225, 18, 21, 45000, 55, False),
-        Enemy("Adult Green Dragon", 207, 17, 20, 40000, 50, True),
-        Enemy("Adult Black Dragon", 195, 16, 19, 35000, 45, False),
-        Enemy("Adult White Dragon", 200, 15, 18, 30000, 40, False)
+        Enemy("Adult Red Dragon", 256, 19, 22, 50000, 60, False, 400),
+        Enemy("Adult Blue Dragon", 225, 18, 21, 45000, 55, False, 380),
+        Enemy("Adult Green Dragon", 207, 17, 20, 40000, 50, True, 350),
+        Enemy("Adult Black Dragon", 195, 16, 19, 35000, 45, False, 330),
+        Enemy("Adult White Dragon", 200, 15, 18, 30000, 40, False, 310)
     ],
     16: [
-        Enemy("Ancient Red Dragon", 546, 24, 28, 180000, 90, False),
-        Enemy("Ancient Blue Dragon", 481, 23, 27, 150000, 85, False),
-        Enemy("Ancient Green Dragon", 432, 22, 26, 130000, 80, True),
-        Enemy("Ancient Black Dragon", 367, 21, 25, 110000, 75, False),
-        Enemy("Ancient White Dragon", 333, 20, 24, 90000, 70, False)
+        Enemy("Ancient Red Dragon", 546, 24, 28, 180000, 90, False, 900),
+        Enemy("Ancient Blue Dragon", 481, 23, 27, 150000, 85, False, 850),
+        Enemy("Ancient Green Dragon", 432, 22, 26, 130000, 80, True, 800),
+        Enemy("Ancient Black Dragon", 367, 21, 25, 110000, 75, False, 750),
+        Enemy("Ancient White Dragon", 333, 20, 24, 90000, 70, False, 700)
     ],
     18: [
-        Enemy("Lich", 135, 18, 20, 50000, 50, False),
-        Enemy("Beholder", 180, 19, 22, 75000, 55, False),
-        Enemy("Death Knight", 180, 20, 21, 80000, 60, False),
-        Enemy("Balor", 262, 22, 24, 120000, 70, False),
-        Enemy("Pit Fiend", 300, 21, 23, 100000, 65, False)
+        Enemy("Lich", 135, 18, 20, 50000, 50, False, 450),
+        Enemy("Beholder", 180, 19, 22, 75000, 55, False, 480),
+        Enemy("Death Knight", 180, 20, 21, 80000, 60, False, 500),
+        Enemy("Balor", 262, 22, 24, 120000, 70, False, 600),
+        Enemy("Pit Fiend", 300, 21, 23, 100000, 65, False, 580)
     ],
     20: [
-        Enemy("Tarrasque", 676, 30, 35, 500000, 120, False),
-        Enemy("Kraken", 472, 28, 32, 300000, 100, False),
-        Enemy("Tiamat", 615, 30, 34, 400000, 110, False),
-        Enemy("Bahamut", 615, 30, 34, 400000, 110, False),
-        Enemy("Empyrean", 313, 26, 30, 200000, 90, True)
+        Enemy("Tarrasque", 676, 30, 35, 500000, 120, False, 1200),
+        Enemy("Kraken", 472, 28, 32, 300000, 100, False, 1000),
+        Enemy("Tiamat", 615, 30, 34, 400000, 110, False, 1150),
+        Enemy("Bahamut", 615, 30, 34, 400000, 110, False, 1150),
+        Enemy("Empyrean", 313, 26, 30, 200000, 90, True, 950)
     ]
 }
 
@@ -592,14 +618,11 @@ scrolls = [
     Scroll(4, Spell('Magic Shield'), 20)
 ]
 
-items = [
-                                         #stats = [hp, mana, attack, defence]
-    Item('Basic armor', 'body_armor', [0, 0, 1, 3], 150, 1),
+items = [                                    #stats = [hp, mana, attack, defence]
     Item('Advanced armor', 'body_armor', [0, 0, 2, 5], 350, 1),
+    Item('Basic armor', 'body_armor', [0, 0, 1, 3], 150, 1),
     Item('Short sword', 'weapon', [0, 0, 3, 0], 100, 1)
 ]
-
-trader = Trader(items, 4+roll(3))
 
 potions = [
     Potion('Minor healing potion', 0, 5, 0, 0, 25),
@@ -607,6 +630,8 @@ potions = [
     Potion('Minor defence potion', 0, 0, 3, 0, 30),
     Potion('Minor attack potion', 0, 0, 0, 3, 30)
 ]
+
+trader = Trader(items, 4+roll(3))
 
 player_name = 'Alex'
 player_race = 'elf'
@@ -634,7 +659,7 @@ while True:
     turn += 1
     trader_check += 1
     print("\nWhat do you want to do?")
-    print('\t1 - go deeper\n\t2 - make a rest\n\t3 - see your stats\n\t4 - inventory')
+    print('\t1 - go deeper\n\t2 - make a rest\n\t3 - see your stats\n\t4 - inventory\n\t5 - spells')
     if player_clas == 'wizard':
         print('\t5 - see your spells')
     action = input('Your choice: ')
@@ -646,7 +671,7 @@ while True:
         else:
             enemy_template = enemies[enemy_lvl(player.lvl)][roll(5) - 1]
             enemy = Enemy(enemy_template.name, enemy_template.hp, enemy_template.attack,
-                          enemy_template.defence, enemy_template.xp, enemy_template.damage, enemy_template.deal)
+                          enemy_template.defence, enemy_template.xp, enemy_template.damage, enemy_template.deal, enemy_template.gold)
             fight(player, enemy)
             print(f'Now you have {player.hp} HP')
     elif action == '2':
@@ -667,7 +692,7 @@ while True:
         print('\nInventory:')
         for item in player.inventory:
             print(f'{item.name}')
-        print('\nGOLD = {self.gold}')
+        print(f'\nGOLD = {player.gold}')
         print('\nFood x', player.food)
         if player.potions != []:
             print('\nPotions:')
@@ -709,5 +734,7 @@ while True:
             print(f"{spell.name} - DMG = {spell.damage}, Healing = {spell.healing}, Defense Boost = {spell.defense_boost}, Mana = {spell.mana}")
         if player.spells == []:
             print("You don't have any spells")
+    elif action == 'trade':
+        Trader.trade(trader, player)
     else:
         print('\tNo such option, choose something else.')
