@@ -275,12 +275,13 @@ class Spell:
             print(f"{player.name}'s defense increased by {self.defense_boost}!")
 
 class Item:
-    def __init__(self, name, slot, stats, cost, lvl):
+    def __init__(self, name, slot, stats, cost, lvl, id):
         self.name = name
         self.slot = slot
         self.stats = stats
         self.cost = cost
         self.lvl = lvl
+        self.id = id
     #stats = [hp, mana, attack, defence]
     def put_on(self, player):
         player.maxhp += self.stats[0]
@@ -296,6 +297,67 @@ class Item:
         player.mana -= self.stats[1]
         player.attack -= self.stats[2]
         player.defence -= self.stats[3]
+def item_gen():
+    for item in items:
+        new_stats = []
+        for stat in item.stats:
+            print(stat.type())
+            stat -= 2
+            if stat < 0:
+                stat = 0
+            new_stats.append(stat)
+        items.append(Item(f'Broken {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost//2}', f'{item.lvl}', 0))
+##################################
+        new_stats = []
+        for stat in item.stats:
+            if item.stats.index(stat) % 2 == 0:
+                stat -= 2
+            else:
+                stat -= 1
+            if stat < 0:
+                stat = 0
+            new_stats.append(stat)
+        items.append(
+            Item(f'Unprepared {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 1.75}', f'{item.lvl}', 1))
+##################################
+        new_stats = []
+        for stat in item.stats:
+            stat -= 1
+            if stat < 0:
+                stat = 0
+            new_stats.append(stat)
+        items.append(
+            Item(f'Weak {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 1.25}', f'{item.lvl}', 2))
+##################################
+        new_stats = []
+        for stat in item.stats:
+            stat += 1
+            if stat < 0:
+                stat = 0
+            new_stats.append(stat)
+        items.append(
+            Item(f'Sharpened {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 0.8}', f'{item.lvl}', 4))
+##################################
+        new_stats = []
+        for stat in item.stats:
+            if item.stats.index(stat) % 2 == 0:
+                stat += 2
+            else:
+                stat += 1
+            if stat < 0:
+                stat = 0
+            new_stats.append(stat)
+        items.append(
+            Item(f'Prepared {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 0.66}', f'{item.lvl}', 5))
+##################################
+        new_stats = []
+        for stat in item.stats:
+            stat += 2
+            if stat < 0:
+                stat = 0
+            new_stats.append(stat)
+        items.append(
+            Item(f'Legendary {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 0.5}', f'{item.lvl}', 6))
 
 
 class Potion:
@@ -412,6 +474,17 @@ class Scroll:
                 print('Your wisdom is not high enough.')
         else:
             print('Your level is not high enough.')
+
+# class ItemGen:
+#     def item_generation(self, item):
+#         new_item = item
+#         for stat in new_item.stats:
+#             if stat != 0:
+#                 stat += randint(-2,2)
+#                 if stat < 1:
+#                     stat = 1
+#         new_items.append(new_item)
+#
 
 
 def cast(player, enemy):
@@ -619,9 +692,9 @@ scrolls = [
 ]
 
 items = [                                    #stats = [hp, mana, attack, defence]
-    Item('Advanced armor', 'body_armor', [0, 0, 2, 5], 350, 1),
-    Item('Basic armor', 'body_armor', [0, 0, 1, 3], 150, 1),
-    Item('Short sword', 'weapon', [0, 0, 3, 0], 100, 1)
+    Item('Advanced armor', 'body_armor', [0, 0, 2, 5], 350, 1, 3),
+    Item('Basic armor', 'body_armor', [0, 0, 1, 3], 150, 1, 3),
+    Item('Short sword', 'weapon', [0, 0, 3, 0], 100, 1, 3)
 ]
 
 potions = [
@@ -736,5 +809,9 @@ while True:
             print("You don't have any spells")
     elif action == 'trade':
         Trader.trade(trader, player)
+    elif action == 'test':
+        print(items)
+        item_gen()
+        print(items)
     else:
         print('\tNo such option, choose something else.')
