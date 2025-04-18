@@ -1,3 +1,4 @@
+from operator import invert
 from random import randint
 
 races = ['human', 'elf', 'dwarf']
@@ -181,7 +182,7 @@ class Player:
             return 'Empty'
         else:
             return self.equipment[slot].name
-    def equipment(self):
+    def equipment_(self):
         print(f'Weapon - {self.item_name('weapon')}')
         print(f'Body armor - {self.item_name('body_armor')}')
         print(f'Head - {self.item_name('head')}')
@@ -208,9 +209,26 @@ class Player:
                 print('You do not posses this item')
             break
     #add item removal => stats back to 0
+    def unequip(self):
+        self.equipment_()
+        item_chosen = input('Choose an item you want to put off: ')
+        for equipped_item in self.equipment.values():
+            if equipped_item != None:
+                if equipped_item.name.lower() == item_chosen.lower():
+                    for item in items:
+                        if item.name.lower() == equipped_item.name.lower():
+                            item_chosen = item
+                            self.equipment[item_chosen.slot] = None
+                            Item.put_off(item_chosen, self)
+                            self.inventory.append(item_chosen)
+                            break
+                    break
+
+
+
 
 class Enemy:
-    def __init__(self, name, hp, attack, defence, xp, damage, deal, gold):
+    def __init__(self, name, hp, attack, defence, xp, damage, deal, gold, lvl):
         self.name = name
         self.hp = hp
         self.attack = attack
@@ -219,6 +237,7 @@ class Enemy:
         self.damage = damage
         self.deal = deal
         self.gold = gold
+        self.lvl = lvl
 
     def damage_enemy(self, p_attack, p_damage):
         p_hit = p_attack + roll(20)
@@ -241,6 +260,18 @@ class Enemy:
             print(f"\tYou got hit for {dealt} damage! You have {max(0, player.hp)} HP left.")
         else:
             print(f"\t{self.name} has missed! You still have {player.hp} HP left.")
+
+    def drop(self, player):
+        drop_items = []
+        chance = roll(10)
+        if chance >= 6:
+            for item in items:
+                if -2 <= item.lvl - self.lvl <= 2:
+                    drop_items.append(item)
+            player.inventory.append(drop_items[randint(0,len(drop_items)-1)])
+            print(f"{item.name} has been added to your inventory.")
+
+
 
 
 class Spell:
@@ -297,17 +328,23 @@ class Item:
         player.mana -= self.stats[1]
         player.attack -= self.stats[2]
         player.defence -= self.stats[3]
+
+    def __str__(self):
+        return f"{self.name} (Slot: {self.slot}, Stats: {self.stats}, Cost: {self.cost}, Level: {self.lvl})"
+    def __repr__(self):
+        return self.__str__()
+
 def item_gen():
-    for item in items:
+    original_items = items.copy()
+    for item in original_items:
         new_stats = []
         for stat in item.stats:
-            print(stat.type())
             stat -= 2
             if stat < 0:
                 stat = 0
             new_stats.append(stat)
-        items.append(Item(f'Broken {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost//2}', f'{item.lvl}', 0))
-##################################
+        items.append(Item(f'Broken {item.name}', item.slot, new_stats, item.cost // 2, item.lvl, 0))
+
         new_stats = []
         for stat in item.stats:
             if item.stats.index(stat) % 2 == 0:
@@ -318,8 +355,8 @@ def item_gen():
                 stat = 0
             new_stats.append(stat)
         items.append(
-            Item(f'Unprepared {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 1.75}', f'{item.lvl}', 1))
-##################################
+            Item(f'Unprepared {item.name}', item.slot, new_stats, item.cost // 1.75, item.lvl, 1))
+
         new_stats = []
         for stat in item.stats:
             stat -= 1
@@ -327,37 +364,40 @@ def item_gen():
                 stat = 0
             new_stats.append(stat)
         items.append(
-            Item(f'Weak {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 1.25}', f'{item.lvl}', 2))
-##################################
+            Item(f'Weak {item.name}', item.slot, new_stats, item.cost // 1.25, item.lvl, 2))
+
         new_stats = []
         for stat in item.stats:
-            stat += 1
-            if stat < 0:
-                stat = 0
-            new_stats.append(stat)
-        items.append(
-            Item(f'Sharpened {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 0.8}', f'{item.lvl}', 4))
-##################################
-        new_stats = []
-        for stat in item.stats:
-            if item.stats.index(stat) % 2 == 0:
-                stat += 2
-            else:
+            if stat != 0:
                 stat += 1
             if stat < 0:
                 stat = 0
             new_stats.append(stat)
         items.append(
-            Item(f'Prepared {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 0.66}', f'{item.lvl}', 5))
-##################################
+            Item(f'Sharpened {item.name}', item.slot, new_stats, item.cost // 0.8, item.lvl, 4))
+
         new_stats = []
         for stat in item.stats:
-            stat += 2
+            if stat != 0:
+                if item.stats.index(stat) % 2 == 0:
+                    stat += 2
+                else:
+                    stat += 1
             if stat < 0:
                 stat = 0
             new_stats.append(stat)
         items.append(
-            Item(f'Legendary {item.name}', f'{item.slot}', f'{new_stats}', f'{item.cost // 0.5}', f'{item.lvl}', 6))
+            Item(f'Prepared {item.name}', item.slot, new_stats, item.cost // 0.66, item.lvl, 5))
+
+        new_stats = []
+        for stat in item.stats:
+            if stat != 0:
+                stat += 2
+            if stat < 0:
+                stat = 0
+            new_stats.append(stat)
+        items.append(
+            Item(f'Legendary {item.name}', item.slot, new_stats, item.cost // 0.5, item.lvl, 6))
 
 
 class Potion:
@@ -580,76 +620,77 @@ def enemy_lvl(lvl):
 
 enemies = {
     2: [
-        Enemy("Goblin", 7, 4, 12, 50, 5, True, 10),
-        Enemy("Kobold", 5, 3, 10, 25, 4, True, 8),
-        Enemy("Giant Rat", 6, 2, 11, 30, 3, False, 6),
-        Enemy("Skeleton", 8, 3, 13, 40, 4, False, 9),
-        Enemy("Zombie", 9, 4, 12, 45, 5, False, 10)
+        Enemy("Goblin", 7, 4, 12, 50, 5, True, 10, 2),
+        Enemy("Kobold", 5, 3, 10, 25, 4, True, 8, 2),
+        Enemy("Giant Rat", 6, 2, 11, 30, 3, False, 6, 2),
+        Enemy("Skeleton", 8, 3, 13, 40, 4, False, 9, 2),
+        Enemy("Zombie", 9, 4, 12, 45, 5, False, 10, 2)
     ],
     4: [
-        Enemy("Orc", 15, 6, 13, 100, 8, True, 20),
-        Enemy("Hobgoblin", 11, 5, 15, 75, 6, True, 18),
-        Enemy("Gnoll", 12, 5, 14, 80, 7, False, 19),
-        Enemy("Giant Spider", 10, 4, 12, 70, 6, False, 17),
-        Enemy("Bandit", 13, 5, 13, 85, 7, True, 18)
+        Enemy("Orc", 15, 6, 13, 100, 8, True, 20, 4),
+        Enemy("Hobgoblin", 11, 5, 15, 75, 6, True, 18, 4),
+        Enemy("Gnoll", 12, 5, 14, 80, 7, False, 19, 4),
+        Enemy("Giant Spider", 10, 4, 12, 70, 6, False, 17, 4),
+        Enemy("Bandit", 13, 5, 13, 85, 7, True, 18, 4)
     ],
     6: [
-        Enemy("Ogre", 300, 8, 11, 300, 13, True, 60),
-        Enemy("Bugbear", 180, 6, 16, 200, 11, True, 50),
-        Enemy("Worg", 30, 7, 14, 220, 10, False, 25),
-        Enemy("Harpy", 25, 6, 13, 180, 9, False, 22),
-        Enemy("Giant Lizard", 35, 7, 15, 250, 12, False, 28)
+        Enemy("Ogre", 300, 8, 11, 300, 13, True, 60, 6),
+        Enemy("Bugbear", 180, 6, 16, 200, 11, True, 50, 6),
+        Enemy("Worg", 30, 7, 14, 220, 10, False, 25, 6),
+        Enemy("Harpy", 25, 6, 13, 180, 9, False, 22, 6),
+        Enemy("Giant Lizard", 35, 7, 15, 250, 12, False, 28, 6)
     ],
     8: [
-        Enemy("Ettin", 85, 10, 14, 1100, 18, False, 70),
-        Enemy("Owlbear", 59, 9, 13, 700, 15, False, 55),
-        Enemy("Troll", 84, 8, 15, 1200, 16, True, 75),
-        Enemy("Giant Crocodile", 85, 9, 14, 1000, 17, False, 70),
-        Enemy("Chimera", 114, 11, 16, 2500, 19, False, 85)
+        Enemy("Ettin", 85, 10, 14, 1100, 18, False, 70, 8),
+        Enemy("Owlbear", 59, 9, 13, 700, 15, False, 55, 8),
+        Enemy("Troll", 84, 8, 15, 1200, 16, True, 75, 8),
+        Enemy("Giant Crocodile", 85, 9, 14, 1000, 17, False, 70, 8),
+        Enemy("Chimera", 114, 11, 16, 2500, 19, False, 85, 8)
     ],
     10: [
-        Enemy("Hill Giant", 105, 11, 15, 1800, 21, True, 90),
-        Enemy("Frost Giant", 138, 12, 16, 3900, 25, True, 110),
-        Enemy("Fire Giant", 162, 13, 18, 5000, 28, False, 125),
-        Enemy("Cloud Giant", 200, 14, 19, 7200, 30, True, 140),
-        Enemy("Stone Giant", 126, 12, 17, 4500, 26, True, 115)
+        Enemy("Hill Giant", 105, 11, 15, 1800, 21, True, 90, 10),
+        Enemy("Frost Giant", 138, 12, 16, 3900, 25, True, 110, 10),
+        Enemy("Fire Giant", 162, 13, 18, 5000, 28, False, 125, 10),
+        Enemy("Cloud Giant", 200, 14, 19, 7200, 30, True, 140, 10),
+        Enemy("Stone Giant", 126, 12, 17, 4500, 26, True, 115, 10)
     ],
     12: [
-        Enemy("Young Red Dragon", 178, 14, 18, 11000, 40, False, 200),
-        Enemy("Young Blue Dragon", 152, 13, 17, 8400, 36, False, 180),
-        Enemy("Young Green Dragon", 136, 12, 16, 7200, 32, True, 160),
-        Enemy("Young Black Dragon", 127, 11, 15, 5900, 30, False, 150),
-        Enemy("Young White Dragon", 133, 10, 14, 5500, 28, False, 140)
+        Enemy("Young Red Dragon", 178, 14, 18, 11000, 40, False, 200, 12),
+        Enemy("Young Blue Dragon", 152, 13, 17, 8400, 36, False, 180, 12),
+        Enemy("Young Green Dragon", 136, 12, 16, 7200, 32, True, 160, 12),
+        Enemy("Young Black Dragon", 127, 11, 15, 5900, 30, False, 150, 12),
+        Enemy("Young White Dragon", 133, 10, 14, 5500, 28, False, 140, 12)
     ],
     14: [
-        Enemy("Adult Red Dragon", 256, 19, 22, 50000, 60, False, 400),
-        Enemy("Adult Blue Dragon", 225, 18, 21, 45000, 55, False, 380),
-        Enemy("Adult Green Dragon", 207, 17, 20, 40000, 50, True, 350),
-        Enemy("Adult Black Dragon", 195, 16, 19, 35000, 45, False, 330),
-        Enemy("Adult White Dragon", 200, 15, 18, 30000, 40, False, 310)
+        Enemy("Adult Red Dragon", 256, 19, 22, 50000, 60, False, 400, 14),
+        Enemy("Adult Blue Dragon", 225, 18, 21, 45000, 55, False, 380, 14),
+        Enemy("Adult Green Dragon", 207, 17, 20, 40000, 50, True, 350, 14),
+        Enemy("Adult Black Dragon", 195, 16, 19, 35000, 45, False, 330, 14),
+        Enemy("Adult White Dragon", 200, 15, 18, 30000, 40, False, 310, 14)
     ],
     16: [
-        Enemy("Ancient Red Dragon", 546, 24, 28, 180000, 90, False, 900),
-        Enemy("Ancient Blue Dragon", 481, 23, 27, 150000, 85, False, 850),
-        Enemy("Ancient Green Dragon", 432, 22, 26, 130000, 80, True, 800),
-        Enemy("Ancient Black Dragon", 367, 21, 25, 110000, 75, False, 750),
-        Enemy("Ancient White Dragon", 333, 20, 24, 90000, 70, False, 700)
+        Enemy("Ancient Red Dragon", 546, 24, 28, 180000, 90, False, 900, 16),
+        Enemy("Ancient Blue Dragon", 481, 23, 27, 150000, 85, False, 850, 16),
+        Enemy("Ancient Green Dragon", 432, 22, 26, 130000, 80, True, 800, 16),
+        Enemy("Ancient Black Dragon", 367, 21, 25, 110000, 75, False, 750, 16),
+        Enemy("Ancient White Dragon", 333, 20, 24, 90000, 70, False, 700, 16)
     ],
     18: [
-        Enemy("Lich", 135, 18, 20, 50000, 50, False, 450),
-        Enemy("Beholder", 180, 19, 22, 75000, 55, False, 480),
-        Enemy("Death Knight", 180, 20, 21, 80000, 60, False, 500),
-        Enemy("Balor", 262, 22, 24, 120000, 70, False, 600),
-        Enemy("Pit Fiend", 300, 21, 23, 100000, 65, False, 580)
+        Enemy("Lich", 135, 18, 20, 50000, 50, False, 450, 18),
+        Enemy("Beholder", 180, 19, 22, 75000, 55, False, 480, 18),
+        Enemy("Death Knight", 180, 20, 21, 80000, 60, False, 500, 18),
+        Enemy("Balor", 262, 22, 24, 120000, 70, False, 600, 18),
+        Enemy("Pit Fiend", 300, 21, 23, 100000, 65, False, 580, 18)
     ],
     20: [
-        Enemy("Tarrasque", 676, 30, 35, 500000, 120, False, 1200),
-        Enemy("Kraken", 472, 28, 32, 300000, 100, False, 1000),
-        Enemy("Tiamat", 615, 30, 34, 400000, 110, False, 1150),
-        Enemy("Bahamut", 615, 30, 34, 400000, 110, False, 1150),
-        Enemy("Empyrean", 313, 26, 30, 200000, 90, True, 950)
+        Enemy("Tarrasque", 676, 30, 35, 500000, 120, False, 1200, 20),
+        Enemy("Kraken", 472, 28, 32, 300000, 100, False, 1000, 20),
+        Enemy("Tiamat", 615, 30, 34, 400000, 110, False, 1150, 20),
+        Enemy("Bahamut", 615, 30, 34, 400000, 110, False, 1150, 20),
+        Enemy("Empyrean", 313, 26, 30, 200000, 90, True, 950, 20)
     ]
 }
+
 
 spells = [
     Spell("Firebolt", 6, 6, 2),
@@ -725,6 +766,8 @@ for i in range(4):
 
 Scroll.get(scrolls[0], player)
 
+item_gen()
+
 turn = 0
 trader = 6 + roll(4)
 trader_check = 0
@@ -744,7 +787,7 @@ while True:
         else:
             enemy_template = enemies[enemy_lvl(player.lvl)][roll(5) - 1]
             enemy = Enemy(enemy_template.name, enemy_template.hp, enemy_template.attack,
-                          enemy_template.defence, enemy_template.xp, enemy_template.damage, enemy_template.deal, enemy_template.gold)
+                          enemy_template.defence, enemy_template.xp, enemy_template.damage, enemy_template.deal, enemy_template.gold, enemy_template.lvl)
             fight(player, enemy)
             print(f'Now you have {player.hp} HP')
     elif action == '2':
@@ -761,7 +804,7 @@ while True:
         Player.stats(player)
     elif action == '4':
         print('\nEquipment:')
-        Player.equipment(player)
+        Player.equipment_(player)
         print('\nInventory:')
         for item in player.inventory:
             print(f'{item.name}')
@@ -775,15 +818,17 @@ while True:
             print('\nScrolls:')
             for scroll in player.scrolls:
                 print(f'Scroll of {scroll.spell.name}')
-        print('\n1 - go back\n2 - equip item')
+        print('\n1 - go back\n2 - equip item\n3 - unequip item')
         if player.scrolls != []:
-            print('3 - use a scroll')
+            print('4 - use a scroll')
         action_chosen = input('Choose your action: ')
         if action_chosen == "1":
             continue
         elif action_chosen == "2":
             Player.equip(player)
         elif action_chosen == "3":
+            Player.unequip(player)
+        elif action_chosen == "4":
             while True:
                 for scroll in player.scrolls:
                     print(f'Scroll of {scroll.spell.name}')
@@ -810,8 +855,6 @@ while True:
     elif action == 'trade':
         Trader.trade(trader, player)
     elif action == 'test':
-        print(items)
-        item_gen()
-        print(items)
+        Enemy.drop(enemies[2][0], player)
     else:
         print('\tNo such option, choose something else.')
